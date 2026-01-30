@@ -376,7 +376,23 @@ async function generarPlanOro() {
                     { label: 'Riego Asig. (m³/ha)', data: dataAjustada, backgroundColor: '#d97706' }
                 ] 
             },
-            options: { responsive: true, maintainAspectRatio: false }
+      options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { top: 30 } }, // Para que no se corten los números arriba
+    plugins: {
+        datalabels: {
+            anchor: 'end',
+            align: 'top',
+            font: { weight: 'bold', size: 11 },
+            formatter: (val) => val > 0 ? fmtNum(val) : '' // Usa tu función de formato
+        }
+    },
+    scales: {
+        y: { beginAtZero: true, grid: { display: false } },
+        x: { grid: { display: false } }
+    }
+}
         });
 
         calcularSemanasCorrelativas(mesesCiclo, fIni, fFin);
