@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>S.I.G. Riego Pro v1.0 | Gestión Integral</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        /* ESTILOS GENERALES PREMIUM */
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 20px; background-color: #f1f5f9; color: #334155; }
+        .container { max-width: 1400px; margin: auto; }
+        .card { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        
+        /* HEADER */
+        .header-step { 
+            color: #0f172a; font-weight: 800; font-size: 1.4rem; 
+            border-bottom: 4px solid #3b82f6; padding-bottom: 12px; margin-bottom: 30px;
+            display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;
+        }
+
+        /* INPUTS */
+        .search-bar { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .search-item { display: flex; align-items: center; gap: 10px; }
+        .search-item label { font-weight: 600; color: #64748b; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .search-item input { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; width: 140px; font-size: 1rem; color: #1e293b; transition: all 0.2s; }
+        .search-item input:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        
+        .result-box { margin-top: 20px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 15px 20px; font-size: 1.05rem; color: #1e40af; display: flex; align-items: center; gap: 12px; }
+
+        .input-group { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px; align-items: flex-end; }
+        .input-group div { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 160px; }
+        .input-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.8px; }
+        .main-input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #fff; width: 100%; box-sizing: border-box; transition: all 0.2s; }
+        .main-input:focus { border-color: #ca8a04; outline: none; box-shadow: 0 0 0 3px rgba(202, 138, 4, 0.1); }
+        
+        /* BOTONES */
+        .btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-blue { background: #3b82f6; color: white; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); }
+        .btn-blue:hover { background: #2563eb; transform: translateY(-1px); }
+        .btn-gold { background: linear-gradient(135deg, #d97706, #b45309); color: white; width: 100%; padding: 16px; font-size: 1.15rem; box-shadow: 0 10px 15px -3px rgba(180, 83, 9, 0.3); margin-top: 15px; letter-spacing: 0.5px; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -3px rgba(180, 83, 9, 0.4); }
+        
+        /* TABLAS Y GRÁFICOS */
+        .chart-container { height: 480px; margin: 35px 0; position: relative; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 25px; font-size: 0.9rem; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+        th { background: #f8fafc; padding: 14px; text-align: center; color: #475569; font-weight: 700; border-bottom: 2px solid #e2e8f0; white-space: nowrap; vertical-align: middle; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; vertical-align: middle; color: #334155; }
+        
+        .col-climate { color: #64748b; background-color: #fcfcfc; }
+        .col-rain { background-color: #eff6ff; color: #0369a1; font-weight: 600; }
+        .col-ideal { color: #166534; font-weight: 700; background: #f0fdf4; border-left: 2px solid #bbf7d0; }
+        .col-ajustada { color: #9a3412; font-weight: 700; background: #fff7ed; }
+        
+        /* Footer totales */
+        .total-row td { background: #f1f5f9; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1; font-size: 0.95rem; }
+        
+        sub { font-size: 0.7em; vertical-align: sub; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+        
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h1 style="margin: 0; font-size: 1.5rem; color: #1e3a8a; letter-spacing: -0.5px;">S.I.G. Riego Pro</h1>
+            <span style="background: #eff6ff; color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #dbeafe; letter-spacing: 0.5px;">
+                v1.0
+            </span>
+        </div>
+
+        <div style="color: #64748b; font-size: 0.9rem; font-weight: 500;">
+            Gestión Integral de Recursos Hídricos
+        </div>
+
+    </div>
+        <div class="header-step">📍 1. Localización de Parcela (FertiPRO)</div>
+        <div class="search-bar">
+            <div class="search-item"><label>Lat:</label><input type="number" id="lat" value="39.443557" step="0.000001"></div>
+            <div class="search-item"><label>Lon:</label><input type="number" id="lon" value="-0.740434" step="0.000001"></div>
+            <button class="btn btn-blue" onclick="encontrarMasCercana()">Buscar Estación</button>
+        </div>
+        <div id="resBusqueda" class="result-box" style="display:none"></div>
+    </div>
+
+    <div class="card">
+        <div class="header-step">💧⚖️💧 2. Balance Hídrico Mensual (Agronómico)</div>
+        <div class="input-group">
+            <div><label class="input-label">Cultivo</label><select id="selectCultivo" class="main-input"><option>Cargando...</option></select></div>
+            <div><label class="input-label">Inicio Campaña</label><input type="date" id="cicloIni" value="2026-03-01" class="main-input"></div>
+            <div><label class="input-label">Fin Campaña</label><input type="date" id="cicloFin" value="2026-10-31" class="main-input"></div>
+            <div><label class="input-label">Recursos (m³/ha)</label><input type="number" id="volDisponible" value="4000" class="main-input"></div>
+        </div>
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border: 2px dashed #cbd5e1; text-align: center;">
+            <label style="font-weight:700; color:#475569; margin-right:15px; font-size:0.95rem;">📂 Archivo Climático (JSON AEMET):</label>
+            <input type="file" id="jsonFile" accept=".json" style="font-size:0.9rem;">
+        </div>
+
+        <button class="btn btn-gold" onclick="generarPlanOro()">✨ Calcular Balance Completo</button>
+
+        <div id="panelResultados" style="display:none">
+            <div class="chart-container"><canvas id="graficaDoble"></canvas></div>
+            <button class="btn btn-blue" style="width:100%" onclick="descargarExcel()">📥 Exportar Tabla Detallada (.xlsx)</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mes</th>
+                        <th>Días</th>
+                        <th class="col-climate">ET<sub>o</sub><br><small>(mm/d)</small></th>
+                        <th class="col-climate">K<sub>c</sub></th>
+                        <th>ET<sub>c</sub><br><small>(mm)</small></th>
+                        <th class="col-rain">P<br><small>(mm)</small></th>
+                        <th class="col-rain">P<sub>e</sub><br><small>(mm)</small></th>
+                        <th class="col-ideal">NH<sub>n</sub><br><small>(m³/ha)</small></th>
+                        <th class="col-ajustada">Asignado<br><small>(m³/ha)</small></th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla"></tbody>
+                <tfoot class="total-row">
+                    <tr>
+                        <td colspan="5" style="text-align:right">TOTAL CAMPAÑA:</td>
+                        <td id="totalP" class="col-rain"></td>
+                        <td id="totalPe" class="col-rain"></td>
+                        <td id="totalIdeal" class="col-ideal"></td>
+                        <td id="totalAjustado" class="col-ajustada"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" id="seccionSemanal" style="display:none">
+        <div class="header-step">📅 3. Programación Semanal (Riego Neto)</div>
+        <p style="color:#64748b; font-size:1rem; margin-bottom: 25px; line-height: 1.5;">
+            Distribución operativa del riego neto (descontando lluvia efectiva) por semanas naturales.
+        </p>
+        
+        <div class="chart-container"><canvas id="graficaSemanal"></canvas></div>
+        <button class="btn btn-blue" style="width:100%" onclick="descargarExcelSemanal()">📥 Exportar Plan Semanal (.xlsx)</button>
+
+        <table>
+            <thead><tr><th>Semana Año</th><th>Fechas Aprox</th><th>Riego Neto Semanal (m³/ha)</th></tr></thead>
+            <tbody id="cuerpoTablaSemanal"></tbody>
+            <tfoot class="total-row">
+                <tr><td colspan="2" style="text-align:right">ACUMULADO:</td><td id="totalSemanalSuma"></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+</div>
+
+<script>
+// --- CONFIGURACIÓN GLOBAL ---
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = "'Segoe UI', 'Helvetica', 'Arial', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#64748b';
+
+let cultivosData = [], exportDataMensual = [], exportDataSemanal = [], miGrafica = null, miGraficaSemana = null;
+
+const fmtNum = (n, dec=0) => n.toLocaleString('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const nombresMesesCortos = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// Carga inicial
+fetch('cultivos.json').then(r => r.json()).then(data => {
+    cultivosData = data;
+    document.getElementById('selectCultivo').innerHTML = data.map((c, i) => `<option value="${i}">${c.nombre}</option>`).join('');
+});
+
+// Funciones Auxiliares
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function formatDate(d) {
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
+}
+
+function aemetToDec(coord) {
+    if(!coord) return 0;
+    const dir = coord.slice(-1), n = coord.slice(0, -1);
+    const s = parseFloat(n.slice(-2)), m = parseFloat(n.slice(-4, -2)), g = parseFloat(n.slice(0, n.length - 4));
+    let dec = g + (m/60) + (s/3600);
+    return (dir === 'S' || dir === 'W') ? -dec : dec;
+}
+
+// LÓGICA DE NEGOCIO
+function encontrarMasCercana() {
+    fetch('estaciones.json').then(r => r.json()).then(ests => {
+        const latU = parseFloat(document.getElementById('lat').value), lonU = parseFloat(document.getElementById('lon').value);
+        let mejor = null, dMin = Infinity;
+        ests.forEach(e => {
+            const d = Math.sqrt(Math.pow(latU - aemetToDec(e.latitud), 2) + Math.pow(lonU - aemetToDec(e.longitud), 2));
+            if(d < dMin) { dMin = d; mejor = e; }
+        });
+        
+        const res = document.getElementById('resBusqueda');
+        res.style.display = "flex"; 
+        res.innerHTML = `
+            <span style="font-size:1.4em">✅</span> 
+            <span>
+                <b>Estación:</b> ${mejor.nombre} | 
+                <b>Cód:</b> <span style="color:#e11d48; font-weight:800">${mejor.indicativo}</span> | 
+                <b>Distancia:</b> ${fmtNum(dMin*111, 1)} km
+            </span>`;
+    });
+}
+
+function generarPlanOro() {
+    const file = document.getElementById('jsonFile').files[0];
+    const volV = parseFloat(document.getElementById('volDisponible').value) || 0;
+    if(!file) return alert("⚠️ Por favor, sube el archivo JSON de AEMET.");
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const aemet = JSON.parse(e.target.result);
+            const cultivo = cultivosData[document.getElementById('selectCultivo').value];
+            const fIni = new Date(document.getElementById('cicloIni').value);
+            const fFin = new Date(document.getElementById('cicloFin').value);
+
+            const medias = Array(13).fill(0).map(() => ({ sumEto: 0, sumP: 0, count: 0 }));
+            
+            aemet.forEach(d => {
+                const m = parseInt(d.fecha.split('-')[1]);
+                let valEto = parseFloat(String(d.eto_mes || d.evap_mes || d.e || "0").replace(',','.'));
+                let valP = parseFloat(String(d.p_mes || d.precipitacion || "0").replace(',','.')); 
+                
+                if(m < 13) { 
+                    if(valEto >= 0) medias[m].sumEto += valEto;
+                    if(valP >= 0) medias[m].sumP += valP;
+                    medias[m].count++; 
+                }
+            });
+
+            let mesesCiclo = [], sumaNHn = 0, iter = new Date(fIni.getFullYear(), fIni.getMonth(), 1);
+            
+            while (iter <= fFin) {
+                const mIdx = iter.getMonth(), anio = iter.getFullYear();
+                const diasMesTotal = new Date(anio, mIdx + 1, 0).getDate();
+                const rIni = new Date(Math.max(iter, fIni)), rFin = new Date(Math.min(new Date(anio, mIdx, diasMesTotal), fFin));
+                const nDiasActivos = Math.max(0, (rFin - rIni) / (86400000) + 1);
+
+                if (nDiasActivos > 0) {
+                    const etoMensualAvg = medias[mIdx+1].count > 0 ? (medias[mIdx+1].sumEto / medias[mIdx+1].count) : 0;
+                    const pMensualAvg = medias[mIdx+1].count > 0 ? (medias[mIdx+1].sumP / medias[mIdx+1].count) : 0;
+
+                    const etoDiaria = etoMensualAvg / diasMesTotal;
+                    const kc = cultivo.kc[mIdx+1] || 0;
+                    const etcDiaria = etoDiaria * kc;
+                    const etcMesTotal = etcDiaria * nDiasActivos; 
+
+                    let peMensualTotal = 0;
+                    if (pMensualAvg < 70) {
+                        peMensualTotal = (0.6 * pMensualAvg) - 10;
+                    } else {
+                        peMensualTotal = (0.8 * pMensualAvg) - 24;
+                    }
+                    if (peMensualTotal < 0) peMensualTotal = 0;
+
+                    const peDiaria = peMensualTotal / diasMesTotal;
+                    const peActiva = peDiaria * nDiasActivos;
+
+                    const nrn_mm = Math.max(0, etcMesTotal - peActiva);
+                    const nhn_m3 = nrn_mm * 10;
+
+                    sumaNHn += nhn_m3;
+
+                    const nombreMes = nombresMesesCortos[mIdx];
+                    const anioCorto = String(anio).slice(-2);
+                    const etiquetaBonita = `${nombreMes}-${anioCorto}`;
+
+                    mesesCiclo.push({ 
+                        etiqueta: etiquetaBonita,
+                        mesNum: mIdx+1, 
+                        anio: anio, 
+                        diasActivos: nDiasActivos,
+                        etoDiaria: etoDiaria,
+                        kc: kc,
+                        etcMm: etcMesTotal,
+                        pMm: pMensualAvg,
+                        peMm: peActiva,
+                        nhn_m3: nhn_m3 
+                    });
+                }
+                iter.setMonth(iter.getMonth() + 1);
+            }
+
+            const cuerpo = document.getElementById('cuerpoTabla');
+            cuerpo.innerHTML = ""; exportDataMensual = [];
+            
+            let labels = [], dataPe = [], dataIdeal = [], dataAjustada = [];
+            let sumaAsignada = 0, sumaP = 0, sumaPe = 0; // Variables para totales
+
+            mesesCiclo.forEach(m => {
+                const m3Asignado = sumaNHn > 0 ? (m.nhn_m3 / sumaNHn) * volV : 0;
+                sumaAsignada += m3Asignado;
+                sumaP += m.pMm;   // Sumar Precipitación
+                sumaPe += m.peMm; // Sumar P. Efectiva
+                
+                m.m3AsignadoFinal = m3Asignado;
+
+                labels.push(m.etiqueta);
+                let volPe = Math.round(m.peMm * 10); 
+                dataPe.push(volPe); 
+
+                dataIdeal.push(Math.round(m.nhn_m3));
+                dataAjustada.push(Math.round(m3Asignado));
+                
+                cuerpo.innerHTML += `
+                    <tr>
+                        <td style="text-transform: capitalize; font-weight:600; color:#1e293b;">${m.etiqueta}</td>
+                        <td>${fmtNum(m.diasActivos)}</td>
+                        <td class="col-climate">${fmtNum(m.etoDiaria, 2)}</td>
+                        <td class="col-climate">${fmtNum(m.kc, 2)}</td>
+                        <td>${fmtNum(m.etcMm, 1)}</td>
+                        <td class="col-rain">${fmtNum(m.pMm, 1)}</td>
+                        <td class="col-rain" style="font-weight:bold">${fmtNum(m.peMm, 1)}</td>
+                        <td class="col-ideal">${fmtNum(m.nhn_m3)}</td>
+                        <td class="col-ajustada">${fmtNum(m3Asignado)}</td>
+                    </tr>`;
+                    
+                exportDataMensual.push({ 
+                    "Mes": m.etiqueta, 
+                    "ETo (mm/d)": fmtNum(m.etoDiaria, 2),
+                    "Kc": fmtNum(m.kc, 2),
+                    "ETc (mm)": fmtNum(m.etcMm, 2),
+                    "Precipitación (mm)": fmtNum(m.pMm, 2),
+                    "P. Efectiva (mm)": fmtNum(m.peMm, 2),
+                    "Nec. Neta (m3/ha)": Math.round(m.nhn_m3), 
+                    "Asignado (m3/ha)": Math.round(m3Asignado) 
+                });
+            });
+
+            // ACTUALIZAR TOTALES EN FOOTER
+            document.getElementById('totalP').innerText = fmtNum(sumaP, 1);
+            document.getElementById('totalPe').innerText = fmtNum(sumaPe, 1);
+            document.getElementById('totalIdeal').innerText = fmtNum(sumaNHn);
+            document.getElementById('totalAjustado').innerText = fmtNum(sumaAsignada);
+            
+            document.getElementById('panelResultados').style.display = "block";
+
+            // GRÁFICO OPTIMIZADO AZUL
+            if(miGrafica) miGrafica.destroy();
+            miGrafica = new Chart(document.getElementById('graficaDoble').getContext('2d'), {
+                type: 'bar',
+                data: { 
+                    labels: labels, 
+                    datasets: [
+                        { 
+                            label: 'P. Efectiva (m³/ha)', 
+                            data: dataPe, 
+                            backgroundColor: '#38bdf8', // Azul Cielo Claro (User Request)
+                            hoverBackgroundColor: '#0ea5e9',
+                            borderRadius: 4,
+                            barPercentage: 0.9,      // Separación ligera entre barras
+                            categoryPercentage: 0.8  // Grupos más anchos
+                        },
+                        { 
+                            label: 'Nec. Neta (m³/ha)', 
+                            data: dataIdeal, 
+                            backgroundColor: '#2563eb', // Azul Oscuro Profundo (User Request)
+                            hoverBackgroundColor: '#1d4ed8',
+                            borderRadius: 4,
+                            barPercentage: 0.9,
+                            categoryPercentage: 0.8
+                        },
+                        { 
+                            label: 'Riego Asig. (m³/ha)', 
+                            data: dataAjustada, 
+                            backgroundColor: '#d97706', // Oro/Ambar Oscuro para contraste
+                            hoverBackgroundColor: '#b45309',
+                            borderRadius: 4,
+                            barPercentage: 0.9,
+                            categoryPercentage: 0.8
+                        }
+                    ] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 30, left: 10, right: 10 } }, 
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { 
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 4,
+                            usePointStyle: true,
+                            titleFont: { size: 13, weight: 'bold' },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.parsed.y;
+                                    if(context.datasetIndex === 0) { 
+                                        return `${label}: ${value} (≈ ${fmtNum(value/10, 1)} mm)`;
+                                    }
+                                    return `${label}: ${value}`;
+                                }
+                            }
+                        },
+                        legend: { 
+                            position: 'top', 
+                            labels: { usePointStyle: true, pointStyle: 'circle', font: { size: 12 }, padding: 20, color: '#475569' } 
+                        },
+                        datalabels: {
+                            anchor: 'end',    
+                            align: 'end',     
+                            offset: -2,       
+                            color: '#64748b', 
+                            font: { weight: 'bold', size: 10 },
+                            formatter: function(value) { return value > 0 ? value : ''; }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { font: { size: 11, weight: '600' }, color: '#475569' }
+                        }, 
+                        y: { 
+                            grid: { borderDash: [4, 4], color: '#f1f5f9', drawBorder: false }, 
+                            border: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+
+            calcularSemanasCorrelativas(mesesCiclo, fIni, fFin);
+
+        } catch (error) {
+            console.error(error);
+            alert("⚠️ Error procesando datos: " + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function calcularSemanasCorrelativas(mesesCiclo, fIni, fFin) {
+    let mapaDiario = {};
+    mesesCiclo.forEach(m => {
+        const m3Diario = m.m3AsignadoFinal / m.diasActivos;
+        let dIter = new Date(m.anio, m.mesNum - 1, 1);
+        let dFinMes = new Date(m.anio, m.mesNum, 0);
+        if(dIter < fIni) dIter = new Date(fIni); 
+        let limite = (dFinMes > fFin) ? fFin : dFinMes; 
+        while(dIter <= limite) {
+            mapaDiario[dIter.toISOString().split('T')[0]] = m3Diario;
+            dIter.setDate(dIter.getDate() + 1);
+        }
+    });
+
+    let semanasData = {};
+    let iter = new Date(fIni);
+    while(iter <= fFin) {
+        const numSem = getWeekNumber(iter);
+        const anio = iter.getFullYear();
+        const key = `S${numSem}-${anio}`;
+        const diaStr = iter.toISOString().split('T')[0];
+        if(!semanasData[key]) semanasData[key] = { num: numSem, suma: 0, inicio: new Date(iter), fin: new Date(iter) };
+        semanasData[key].suma += (mapaDiario[diaStr] || 0);
+        semanasData[key].fin = new Date(iter);
+        iter.setDate(iter.getDate() + 1);
+    }
+
+    const cuerpo = document.getElementById('cuerpoTablaSemanal');
+    cuerpo.innerHTML = ""; exportDataSemanal = [];
+    let labelsS = [], dataS = [], totalS = 0;
+    const listaSemanas = Object.values(semanasData).sort((a,b) => {
+        if (a.inicio.getFullYear() !== b.inicio.getFullYear()) return a.inicio - b.inicio;
+        return a.num - b.num;
+    });
+
+    listaSemanas.forEach(s => {
+        const val = Math.round(s.suma);
+        if (val >= 0) { 
+            totalS += val;
+            labelsS.push(s.num);
+            dataS.push(val);
+            const fechas = `${formatDate(s.inicio)} - ${formatDate(s.fin)}`;
+            cuerpo.innerHTML += `<tr><td style="font-weight:bold; color:#1e3a8a">Semana ${s.num}</td><td style="color:#64748b; font-size:0.9em">${fechas}</td><td class="col-ajustada">${fmtNum(val)} m³/ha</td></tr>`;
+            exportDataSemanal.push({ "Semana": s.num, "Fechas": fechas, "Riego Neto (m3/ha)": val });
+        }
+    });
+
+    exportDataSemanal.push({ "Semana": "TOTAL", "Riego Neto (m3/ha)": Math.round(totalS) });
+    document.getElementById('totalSemanalSuma').innerText = fmtNum(totalS) + " m³/ha";
+    document.getElementById('seccionSemanal').style.display = "block";
+
+    if(miGraficaSemana) miGraficaSemana.destroy();
+    miGraficaSemana = new Chart(document.getElementById('graficaSemanal').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labelsS,
+            datasets: [{
+                label: 'Riego Neto Semanal (m³/ha)',
+                data: dataS,
+                borderColor: '#ca8a04',
+                backgroundColor: 'rgba(202, 138, 4, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: 'white'
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }
+    });
+}
+
+function descargarExcel() {
+    const ws = XLSX.utils.json_to_sheet(exportDataMensual);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Balance_Mensual");
+    XLSX.writeFile(wb, "Balance_Hidrico_Pro.xlsx");
+}
+
+function descargarExcelSemanal() {
+    const ws = XLSX.utils.json_to_sheet(exportDataSemanal);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plan_Semanal");
+    XLSX.writeFile(wb, "Riego_Semanal_Neto.xlsx");
+}
+</script>
+</body>
+</html>
