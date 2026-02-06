@@ -503,73 +503,74 @@ const num = (x) => {
     const mm = medias[mIdx + 1];
     if (mm.count > 0 && estacionSeleccionadaMeta) {
 
-        const z = parseFloat(estacionSeleccionadaMeta.altitud || "0");
-        const latDeg = aemetToDec(estacionSeleccionadaMeta.latitud);
+    const z = parseFloat(estacionSeleccionadaMeta.altitud || "0");
+    const latDeg = aemetToDec(estacionSeleccionadaMeta.latitud);
 
-        const Tmean = mm.sumTmean / mm.count;
-        const Tmax  = mm.sumTmax / mm.count;
-        const Tmin  = mm.sumTmin / mm.count;
-        const RHmean = mm.sumRH / mm.count;
+    const Tmean = mm.sumTmean / mm.count;
+    const Tmax  = mm.sumTmax / mm.count;
+    const Tmin  = mm.sumTmin / mm.count;
+    const RHmean = mm.sumRH / mm.count;
 
-       // viento medio AEMET (km/h) convertido a u2 (m/s a 2 m, FAO-56)
-const u2 = windToU2(mm.sumWind / mm.count);
+    // viento medio AEMET (km/h) convertido a u2 (m/s a 2 m, FAO-56)
+    const u2 = windToU2(mm.sumWind / mm.count);
 
-        // Día juliano representativo: día 15 del mes
-        const J = Math.floor((new Date(anio, mIdx, 15) - new Date(anio, 0, 1)) / 86400000) + 1;
+    // Día juliano representativo: día 15 del mes
+    const J = Math.floor((new Date(anio, mIdx, 15) - new Date(anio, 0, 1)) / 86400000) + 1;
 
-        // Radiación: preferimos insolación (si existe) por fiabilidad.
-        const Ra = raMJ(latDeg, J);
-        const N = daylightHours(latDeg, J);
+    // Radiación
+    const Ra = raMJ(latDeg, J);
+    const N = daylightHours(latDeg, J);
 
-       let Rs = 0;
-if (mm.sumGlo > 0) {
-    const gloAvg = mm.sumGlo / mm.count;    // valor mensual medio
-    Rs = rsFromGloMonthly(gloAvg, diasMesTotal);
-} else if (mm.sumInso > 0) {
-    const n = mm.sumInso / mm.count;        // horas de sol medias
-    Rs = rsFromInsolation(n, N, Ra);        // MJ/m²/día
-} else {
-    Rs = 0;
-}
-
-        if (Rs > 0) {
-            etoDiaria = etoPM_Fao56_MeanDaily({
-                Tmean, Tmax, Tmin, RHmean, u2, Rs, z, latDeg, J
-            });
-        } else {
-            etoDiaria = 0; // sin radiación/insolación no estimamos
-        }
+    let Rs = 0;
+    if (mm.sumGlo > 0) {
+        const gloAvg = mm.sumGlo / mm.count;    // valor mensual medio
+        Rs = rsFromGloMonthly(gloAvg, diasMesTotal);
+    } else if (mm.sumInso > 0) {
+        const n = mm.sumInso / mm.count;        // horas de sol medias
+        Rs = rsFromInsolation(n, N, Ra);        // MJ/m²/día
+    } else {
+        Rs = 0;
     }
 
-    // DEBUG (solo JULIO)
-if (mIdx === 6) {
-    const windAvg = mm.count ? (mm.sumWind / mm.count) : null;
-    const u2Dbg = (windAvg != null) ? windToU2(windAvg) : null;
-    const gloAvg = mm.count ? (mm.sumGlo / mm.count) : null;
-    const insoAvg = mm.count ? (mm.sumInso / mm.count) : null;
-    const Rs_from_glo = (mm.sumGlo > 0) ? rsFromGloMonthly(gloAvg, diasMesTotal) : null;
-    const Rs_from_inso = (mm.sumInso > 0) ? rsFromInsolation(insoAvg, N, Ra) : null;
+    if (Rs > 0) {
+        etoDiaria = etoPM_Fao56_MeanDaily({
+            Tmean, Tmax, Tmin, RHmean, u2, Rs, z, latDeg, J
+        });
+    } else {
+        etoDiaria = 0; // sin radiación/insolación no estimamos
+    }
 
-    console.log("DEBUG JULIO", {
-    estacion: estacionSeleccionadaId,
-    count: mm.count,
-    Tmean: mm.count ? (mm.sumTmean / mm.count) : null,
-    RH: mm.count ? (mm.sumRH / mm.count) : null,
-    wind_raw_kmh: windAvg,
-    u2_ms: u2Dbg,
-    sumInso: mm.sumInso,
-    sumGlo: mm.sumGlo,
-    etoDiaria,
-    glo_avg: gloAvg,
-    inso_avg: insoAvg,
-    Ra,
-    N,
-    Rs,
-    Rs_from_glo,
-    Rs_from_inso,
-});
+    // DEBUG (solo JULIO) -> dentro del if para que existan Ra, N, Rs
+    if (mIdx === 6) {
+        const windAvg = mm.count ? (mm.sumWind / mm.count) : null;
+        const u2Dbg = (windAvg != null) ? windToU2(windAvg) : null;
+        const gloAvg = mm.count ? (mm.sumGlo / mm.count) : null;
+        const insoAvg = mm.count ? (mm.sumInso / mm.count) : null;
 
+        const Rs_from_glo = (mm.sumGlo > 0) ? rsFromGloMonthly(gloAvg, diasMesTotal) : null;
+        const Rs_from_inso = (mm.sumInso > 0) ? rsFromInsolation(insoAvg, N, Ra) : null;
+
+        console.log("DEBUG JULIO", {
+            estacion: estacionSeleccionadaId,
+            count: mm.count,
+            Tmean,
+            RH: RHmean,
+            wind_raw_kmh: windAvg,
+            u2_ms: u2Dbg,
+            sumInso: mm.sumInso,
+            sumGlo: mm.sumGlo,
+            glo_avg: gloAvg,
+            inso_avg: insoAvg,
+            Ra,
+            N,
+            Rs,
+            Rs_from_glo,
+            Rs_from_inso,
+            etoDiaria
+        });
+    }
 }
+
 
     const kc = cultivo.kc[mIdx+1] || 0;
     const etcDiaria = etoDiaria * kc;
