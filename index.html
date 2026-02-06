@@ -565,14 +565,17 @@ const num = (x) => {
 
 
         let mesesCiclo = [], sumaNHn = 0, iter = new Date(fIni.getFullYear(), fIni.getMonth(), 1);
+let monthKeysCiclo = [];
         
         while (iter <= fFin) {
             const mIdx = iter.getMonth(), anio = iter.getFullYear();
+            const monthKey = `${anio}-${String(mIdx + 1).padStart(2, '0')}`;
             const diasMesTotal = new Date(anio, mIdx + 1, 0).getDate();
             const rIni = new Date(Math.max(iter, fIni)), rFin = new Date(Math.min(new Date(anio, mIdx, diasMesTotal), fFin));
             const nDiasActivos = Math.max(0, (rFin - rIni) / (86400000) + 1);
 
-           if (nDiasActivos > 0) {
+            if (nDiasActivos > 0) {
+                   if (!monthKeysCiclo.includes(monthKey)) monthKeysCiclo.push(monthKey);
     const pMensualAvg = medias[mIdx+1].count > 0 ? (medias[mIdx+1].sumP / medias[mIdx+1].count) : 0;
 
     // --- ETo FAO-56 (mm/día) ---
@@ -670,7 +673,10 @@ const num = (x) => {
 }
             iter.setMonth(iter.getMonth() + 1);
         }
-
+        
+// Inicializar trazabilidad mensual (no afecta al cálculo todavía)
+usageLogMensual = initUsageLog(monthKeysCiclo);
+        
         // --- RENDERIZADO DE TABLA Y GRÁFICO ---
         const cuerpo = document.getElementById('cuerpoTabla');
         cuerpo.innerHTML = ""; exportDataMensual = [];
