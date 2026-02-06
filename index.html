@@ -233,6 +233,31 @@ function aemetToDec(coord) {
     let dec = g + (m/60) + (s/3600);
     return (dir === 'S' || dir === 'W') ? -dec : dec;
 }
+function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // km
+    const toRad = (x) => x * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon/2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function normalizarStationDesdeAemet(e) {
+    const lat = aemetToDec(e.latitud);
+    const lon = aemetToDec(e.longitud);
+    const alt = (e.altitud != null && e.altitud !== "") ? parseFloat(e.altitud) : null;
+    return {
+        id: e.indicativo,
+        name: e.nombre,
+        lat,
+        lon,
+        alt
+    };
+}
+
 // =======================
 // FAO-56 Penman-Monteith (ETo) usando "día representativo" del mes
 // =======================
@@ -365,9 +390,20 @@ async function encontrarMasCercana() {
         const ests = await responseEsts.json();
 
         estacionesCercanas = ests.map(e => {
-            const d = Math.sqrt(Math.pow(latU - aemetToDec(e.latitud), 2) + Math.pow(lonU - aemetToDec(e.longitud), 2));
-            return { ...e, distanciaRealKm: d * 111 };
-        }).sort((a, b) => a.distanciaRealKm - b.distanciaRealKm);
+    const latE = aemetToDec(e.latitud);
+    const lonE = aemetToDec(e.longitud);
+    const dKm = haversineKm(latU, lonU, latE, lonE);
+    return { ...e, distanciaRealKm: dKm };
+}).sort((a, b) => a.distanciaRealKm - b.distanciaRealKm);
+// Poblar modelo interno (para siguientes pasos, no cambia la IU ni la estación validada actual)
+estacionesModelo.ranked = estacionesCercanas.map(e => {
+    const s = normalizarStationDesdeAemet(e);
+    return { ...s, distanciaKm: e.distanciaRealKm };
+});
+
+// Candidata por cercanía (aún no sustituye tu estación validada actual)
+estacionesModelo.primary = estacionesModelo.ranked[0] || null;
+estacionesModelo.support = estacionesModelo.ranked.slice(1, 10);
 
        let estacionValida = null;
 estacionSeleccionadaVars = null;
