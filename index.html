@@ -271,8 +271,9 @@ function rsFromInsolation(n, N, Ra) {
 const AEMET_GLO_KJ_M2_MONTH = true; // si no cuadra, lo ajustamos en un paso posterior
 
 function rsFromGloMonthly(gloValue, daysInMonth) {
-    // AEMET: glo en kJ/m² mensual (no "decenas") -> MJ/m²/día
-    return (gloValue / 1000) / daysInMonth;
+    // AEMET: glo en decenas de kJ/m² (mensual)
+    // -> convertir a MJ/m²/día
+    return ((gloValue * 10) / 1000) / daysInMonth;
 }
 
 function etoPM_Fao56_MeanDaily({ Tmean, Tmax, Tmin, RHmean, u2, Rs, z, latDeg, J }) {
