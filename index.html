@@ -156,6 +156,25 @@ const API_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtYW1vcmVub0B2aXN1YWxuYWNlcnQuY2
 let estacionSeleccionadaId = null; 
 let estacionSeleccionadaMeta = null;
 let estacionSeleccionadaVars = null;
+// =======================
+// CACHÉ AEMET (para reutilizar descargas por estación/años)
+// =======================
+const aemetMensualCache = new Map();
+
+async function fetchAemetMensual(stationId, anioIni, anioFin) {
+    const cacheKey = `${stationId}|${anioIni}|${anioFin}`;
+    if (aemetMensualCache.has(cacheKey)) return aemetMensualCache.get(cacheKey);
+
+    const urlAemet = `https://opendata.aemet.es/opendata/api/valores/climatologicos/mensualesanuales/datos/anioini/${anioIni}/aniofin/${anioFin}/estacion/${stationId}?api_key=${API_KEY}`;
+
+    const response = await fetch(urlAemet);
+    const metadata = await response.json();
+    const dataResponse = await fetch(metadata.datos);
+    const aemet = await dataResponse.json();
+
+    aemetMensualCache.set(cacheKey, aemet);
+    return aemet;
+}
 
 // --- CONFIGURACIÓN GLOBAL CHART.JS ---
 Chart.register(ChartDataLabels);
