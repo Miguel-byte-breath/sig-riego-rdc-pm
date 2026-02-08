@@ -557,6 +557,17 @@ console.log("AEMET ejemplo (primer registro):", aemet && aemet.length ? aemet[0]
 console.log("Campos presentes (primer registro):", aemet && aemet.length ? Object.keys(aemet[0]) : []);
 
         radMensualPorEstacion[estacionSeleccionadaId] = indexarRadiacionMensualDesdeAemet(aemet);
+        // --- Paso 5.3.1: radiación de estaciones de apoyo (máx 5, por distancia) ---
+const supportStations = (estacionesModelo.support || []).slice(0, 5);
+
+for (const st of supportStations) {
+    try {
+        const aemetSup = await fetchAemetMensual(st.id, anioIni, anioFin);
+        radMensualPorEstacion[st.id] = indexarRadiacionMensualDesdeAemet(aemetSup);
+    } catch (e) {
+        console.warn("Radiación no disponible para estación support", st.id, e);
+    }
+}
 
         // --- LÓGICA AGRONÓMICA ORIGINAL ---
         const cultivo = cultivosData[document.getElementById('selectCultivo').value];
