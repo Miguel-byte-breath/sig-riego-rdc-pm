@@ -362,7 +362,6 @@ function renderDiagnosticoSeccion1({ principal, supports, candidatesDiag, bestBy
     const note = (id === pid) ? "principal" : "apoyo";
     return `<div>• ${label}: <b>${name}</b> (<code>${id}</code>) — cobertura ${n}/${total} (<i>${note}</i>)</div>`;
   };
-return;
   res.innerHTML = `
     <div style="background:#eef7ff;border-radius:14px;padding:16px;border:1px solid #d7ecff">
       <div style="font-size:1.1rem;">
@@ -771,7 +770,7 @@ async function encontrarMasCercana() {
 // Poblar modelo interno (para siguientes pasos, no cambia la IU ni la estación validada actual)
 estacionesModelo.ranked = estacionesCercanas.map(e => {
     const s = normalizarStationDesdeAemet(e);
-    return { ...s, distanciaKm: e.distanciaRealKm };
+    return { ...s, dist_km: e.distanciaRealKm };
 });
 
 // Candidata por cercanía (aún no sustituye tu estación validada actual)
