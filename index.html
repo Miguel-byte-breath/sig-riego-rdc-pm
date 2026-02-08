@@ -742,10 +742,29 @@ async function generarPlanOro() {
 console.log("ESTACIÓN:", estacionSeleccionadaId, estacionSeleccionadaMeta);
 console.log("AEMET ejemplo (primer registro):", aemet && aemet.length ? aemet[0] : null);
 console.log("Campos presentes (primer registro):", aemet && aemet.length ? Object.keys(aemet[0]) : []);
+// ---- PASO 2: mediasPorEstacion para fallback por variable (principal + supports) ----
+usageLogMensual = {};              // evita arrastre entre ejecuciones
+const mediasPorEstacion = {};      // acumuladores por estación
+
+// estación principal
+mediasPorEstacion[estacionSeleccionadaId] = buildMediasPorMesDesdeAemet(aemet);
+
+// estaciones de apoyo (las mismas que ya usas para radiación)
+const supportStations = (estacionesModelo.support || []).slice(0, 5);
+const supportIds = supportStations.map(s => s.id);
+
+// precarga supports (HR, viento, temperaturas)
+for (const st of supportStations) {
+    try {
+        const aemetSup = await fetchAemetMensual(st.id, anioIni, anioFin);
+        mediasPorEstacion[st.id] = buildMediasPorMesDesdeAemet(aemetSup);
+    } catch (e) {
+        console.warn("Datos mensuales no disponibles para estación support", st.id, e);
+    }
+}
 
         radMensualPorEstacion[estacionSeleccionadaId] = indexarRadiacionMensualDesdeAemet(aemet);
        // --- Paso 5.3.1: radiación de estaciones de apoyo (máx 5, por distancia) ---
-const supportStations = (estacionesModelo.support || []).slice(0, 5);
 
 for (const st of supportStations) {
     try {
@@ -818,7 +837,80 @@ const num = (x) => {
 
         let mesesCiclo = [], sumaNHn = 0, iter = new Date(fIni.getFullYear(), fIni.getMonth(), 1);
 let monthKeysCiclo = [];
-        
+        // ---- PASO 3: extractores + temperaturas en conjunto (fallback principal + supports) ----
+const getMedias = (stationId) => mediasPorEstacion?.[stationId] || null;
+
+const extractorRH = (stationId, monthKey) => {
+    const mi = monthIndexFromKey(monthKey); // 1..12
+    const m = getMedias(stationId);
+    if (!mi || !m) return null;
+    const rec = m[mi];
+    if (!rec || rec.countRH <= 0) return null;
+    return rec.sumRH / rec.countRH;
+};
+
+const extractorU2 = (stationId, monthKey) => {
+    const mi = monthIndexFromKey(monthKey); // 1..12
+    const m = getMedias(stationId);
+    if (!mi || !m) return null;
+    const rec = m[mi];
+    if (!rec || rec.countWind <= 0) return null;
+
+    const windKmh = rec.sumWind / rec.countWind; // AEMET w_med está en km/h
+    const u2 = windToU2(windKmh);                // tu función ya convierte a u2 (2 m)
+    return Number.isFinite(u2) ? u2 : null;
+};
+
+// Temperaturas en conjunto: preferimos tmean directo; si no, tmax+tmin
+function resolveTempsConFallback(monthKey, principalId, supportIds) {
+    const mi = monthIndexFromKey(monthKey);
+    if (!mi) return null;
+
+    const candidates = [principalId, ...(supportIds || []).slice(0, 5)];
+
+    for (let i = 0; i < candidates.length; i++) {
+        const sid = candidates[i];
+        const m = getMedias(sid);
+        if (!m) continue;
+        const rec = m[mi];
+        if (!rec) continue;
+
+        const note = (i === 0) ? "principal" : `apoyo #${i}`;
+
+        // A) tmean directo
+        if (rec.countTmeanDirect > 0) {
+            const Tmean = rec.sumTmeanDirect / rec.countTmeanDirect;
+
+            // Tmax/Tmin reales si existen; si no, degradamos a Tmean (no inventamos)
+            const TmaxReal = (rec.countTmaxReal > 0) ? (rec.sumTmaxReal / rec.countTmaxReal) : null;
+            const TminReal = (rec.countTminReal > 0) ? (rec.sumTminReal / rec.countTminReal) : null;
+
+            const Tmax = (TmaxReal != null) ? TmaxReal : Tmean;
+            const Tmin = (TminReal != null) ? TminReal : Tmean;
+
+            setUsed(usageLogMensual, monthKey, "tmean", sid, "tm_mes", note);
+            setUsed(usageLogMensual, monthKey, "tmax",  sid, (TmaxReal != null ? "tm_max" : "tm_mes"), note);
+            setUsed(usageLogMensual, monthKey, "tmin",  sid, (TminReal != null ? "tm_min" : "tm_mes"), note);
+
+            return { Tmean, Tmax, Tmin };
+        }
+
+        // B) tmax + tmin
+        if (rec.countTmaxReal > 0 && rec.countTminReal > 0) {
+            const Tmax = rec.sumTmaxReal / rec.countTmaxReal;
+            const Tmin = rec.sumTminReal / rec.countTminReal;
+            const Tmean = (Tmax + Tmin) / 2;
+
+            setUsed(usageLogMensual, monthKey, "tmean", sid, "tm_max+tm_min/2", note);
+            setUsed(usageLogMensual, monthKey, "tmax",  sid, "tm_max", note);
+            setUsed(usageLogMensual, monthKey, "tmin",  sid, "tm_min", note);
+
+            return { Tmean, Tmax, Tmin };
+        }
+    }
+
+    return null;
+}
         while (iter <= fFin) {
             const mIdx = iter.getMonth(), anio = iter.getFullYear();
             const monthKey = `${anio}-${String(mIdx + 1).padStart(2, '0')}`;
