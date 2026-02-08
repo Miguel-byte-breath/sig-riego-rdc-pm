@@ -278,6 +278,18 @@ function normalizarStationDesdeAemet(e) {
         alt
     };
 }
+
+function getRadMensualDeEstacion(stationId, monthKey) {
+    const stData = radMensualPorEstacion[stationId];
+    if (!stData) return null;
+    const rec = stData[monthKey];
+    if (!rec || rec.count <= 0) return null;
+
+    const gloAvg = (rec.sumGlo > 0) ? (rec.sumGlo / rec.count) : 0;
+    const insoAvg = (rec.sumInso > 0) ? (rec.sumInso / rec.count) : 0;
+
+    return { gloAvg, insoAvg };
+}
     
 function indexarRadiacionMensualDesdeAemet(aemetJson) {
     // Devuelve: { "YYYY-MM": { count, sumGlo, sumInso } }
@@ -670,17 +682,44 @@ let monthKeysCiclo = [];
     const Ra = raMJ(latDeg, J);
     const N = daylightHours(latDeg, J);
 
-    let Rs = 0;
-    if (mm.sumGlo > 0) {
-        const gloAvg = mm.sumGlo / mm.count;    // valor mensual medio
-        Rs = rsFromGloMonthly(gloAvg, diasMesTotal);
-    } else if (mm.sumInso > 0) {
-        const n = mm.sumInso / mm.count;        // horas de sol medias
-        Rs = rsFromInsolation(n, N, Ra);        // MJ/m²/día
-    } else {
-        Rs = 0;
-    }
+   let Rs = 0;
 
+// 1) Intento en estación principal efectiva (la del cálculo T/HR/viento)
+let radSource = null; // { stationId, mode, note }
+const radMain = getRadMensualDeEstacion(estacionSeleccionadaId, monthKey);
+
+if (radMain && radMain.gloAvg > 0) {
+    Rs = rsFromGloMonthly(radMain.gloAvg, diasMesTotal);
+    radSource = { stationId: estacionSeleccionadaId, mode: "glo", note: "principal" };
+} else if (radMain && radMain.insoAvg > 0) {
+    Rs = rsFromInsolation(radMain.insoAvg, N, Ra);
+    radSource = { stationId: estacionSeleccionadaId, mode: "inso->AP", note: "principal" };
+} else {
+    // 2) Fallback: estaciones de apoyo (máx 5, por distancia)
+    const supportStations = (estacionesModelo.support || []).slice(0, 5);
+
+    for (let i = 0; i < supportStations.length; i++) {
+        const st = supportStations[i];
+        const radSup = getRadMensualDeEstacion(st.id, monthKey);
+
+        if (radSup && radSup.gloAvg > 0) {
+            Rs = rsFromGloMonthly(radSup.gloAvg, diasMesTotal);
+            radSource = { stationId: st.id, mode: "glo", note: `apoyo #${i + 1}` };
+            break;
+        }
+        if (radSup && radSup.insoAvg > 0) {
+            Rs = rsFromInsolation(radSup.insoAvg, N, Ra);
+            radSource = { stationId: st.id, mode: "inso->AP", note: `apoyo #${i + 1}` };
+            break;
+        }
+    }
+}
+
+// Registrar trazabilidad de radiación si se resolvió
+if (radSource) {
+    setUsed(usageLogMensual, monthKey, "rad", radSource.stationId, radSource.mode, radSource.note);
+}        
+        
     if (Rs > 0) {
         etoDiaria = etoPM_Fao56_MeanDaily({
             Tmean, Tmax, Tmin, RHmean, u2, Rs, z, latDeg, J
