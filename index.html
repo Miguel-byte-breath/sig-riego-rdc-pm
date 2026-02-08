@@ -679,7 +679,7 @@ estacionesModelo.support = estacionesModelo.ranked.slice(1, 10);
        let estacionValida = null;
 estacionSeleccionadaVars = null;
 
-// Usamos el mismo rango de 36 meses que usarás luego en generarPlanOro()
+// Validamos estación con histórico (últimos 36 meses aprox), independientemente del ciclo.
 const fIni = new Date(document.getElementById('cicloIni').value);
 const fFin = new Date(document.getElementById('cicloFin').value);
 
@@ -723,7 +723,7 @@ const cumpleVariablesPM = (datos) => {
 for (let i = 0; i < limiteBusqueda; i++) {
     const cand = estacionesCercanas[i];
 
-    const urlTest = `https://opendata.aemet.es/opendata/api/valores/climatologicos/mensualesanuales/datos/anioini/${anioIni}/aniofin/${anioFin}/estacion/${cand.indicativo}?api_key=${API_KEY}`;
+    const urlTest = `https://opendata.aemet.es/opendata/api/valores/climatologicos/mensualesanuales/datos/anioini/${anioIniFetch}/aniofin/${anioFinFetch}/estacion/${cand.indicativo}?api_key=${API_KEY}`;
 
     const resp = await fetch(urlTest);
     const meta = await resp.json();
