@@ -1203,7 +1203,7 @@ const anioRef = (typeof anioFinFetch !== "undefined")
 
 const monthKeyRad = `${anioRef}-${monthKey.slice(5,7)}`;
 
-const radMain = getRadMensualDeEstacion(estacionSeleccionadaId, monthKey);
+const radMain = getRadMensualDeEstacion(estacionSeleccionadaId, monthKeyRad);
 
 if (radMain && radMain.gloAvg > 0) {
     Rs = rsFromGloMonthly(radMain.gloAvg, diasMesTotal);
@@ -1236,7 +1236,9 @@ if (radMain && radMain.gloAvg > 0) {
 if (radSource) {
     setUsed(usageLogMensual, monthKey, "rad", radSource.stationId, radSource.mode, radSource.note);
 }        
-        
+usageLogMensual[monthKey] = usageLogMensual[monthKey] || {};
+usageLogMensual[monthKey].rad = (Rs != null && !Number.isNaN(Rs)) ? Rs : null;
+
     if (Rs > 0 && temps && RHmean != null && u2 != null) {
     const { Tmean, Tmax, Tmin } = temps;
     etoDiaria = etoPM_Fao56_MeanDaily({
