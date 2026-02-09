@@ -172,15 +172,11 @@ async function fetchAemetMensual(estacionId, anioIni, anioFin) {
   if (!respMeta.ok) {
     throw new Error(`AEMET meta HTTP ${respMeta.status} (${estacionId}) url=${url} body=${txtMeta.slice(0,80)}`);
   }
-  if (!ctMeta.includes("application/json")) {
-    throw new Error(`AEMET meta no-JSON (${estacionId}) ct=${ctMeta} url=${url} body=${txtMeta.slice(0,80)}`);
-  }
-
   let meta;
-  try { meta = JSON.parse(txtMeta); }
-  catch (e) {
-    throw new Error(`AEMET meta JSON inválido (${estacionId}) url=${url} body=${txtMeta.slice(0,80)}`);
-  }
+try { meta = JSON.parse(txtMeta); }
+catch (e) {
+  throw new Error(`AEMET meta no-JSON (${estacionId}) ct=${ctMeta} url=${url} body=${txtMeta.slice(0,80)}`);
+}
 
   if (!meta || !meta.datos) return null;
 
@@ -192,14 +188,10 @@ async function fetchAemetMensual(estacionId, anioIni, anioFin) {
   if (!respDatos.ok) {
     throw new Error(`AEMET datos HTTP ${respDatos.status} (${estacionId}) url=${meta.datos} body=${txtDatos.slice(0,80)}`);
   }
-  if (!ctDatos.includes("application/json")) {
-    throw new Error(`AEMET datos no-JSON (${estacionId}) ct=${ctDatos} url=${meta.datos} body=${txtDatos.slice(0,80)}`);
-  }
-
   try { return JSON.parse(txtDatos); }
-  catch (e) {
-    throw new Error(`AEMET datos JSON inválido (${estacionId}) url=${meta.datos} body=${txtDatos.slice(0,80)}`);
-  }
+catch (e) {
+  throw new Error(`AEMET datos no-JSON (${estacionId}) ct=${ctDatos} url=${meta.datos} body=${txtDatos.slice(0,80)}`);
+}
 }
 
 function validarVariablesImprescindiblesPorCiclo(fIni, fFin, usageLogMensual) {
@@ -214,8 +206,10 @@ function validarVariablesImprescindiblesPorCiclo(fIni, fFin, usageLogMensual) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
         const monthKey = `${y}-${m}`;
+const anioRef = new Date().getFullYear() - 1;           // último año completo AEMET
+const monthKeyHist = `${anioRef}-${m}`;                 // ej. 2026-03 -> 2025-03
+const log = usageLogMensual?.[monthKey] || usageLogMensual?.[monthKeyHist] || {};
 
-        const log = usageLogMensual?.[monthKey] || {};
 
         // Temperatura: aceptamos tmean o (tmin+tmax)
         const tempOk = (log.tmean != null && log.tmean !== "") ||
