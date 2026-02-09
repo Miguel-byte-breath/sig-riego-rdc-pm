@@ -1130,7 +1130,7 @@ function resolveTempsConFallback(monthKey, principalId, supportIds) {
     let etoDiaria = 0;
 
     const mm = medias[mIdx + 1];
-    if (mm.count > 0 && estacionSeleccionadaMeta) {
+    if (estacionSeleccionadaMeta) {
     const stationIdUsada = estacionSeleccionadaId || (estacionSeleccionadaMeta && estacionSeleccionadaMeta.indicativo) || null;
     const z = parseFloat(estacionSeleccionadaMeta.altitud || "0");
     const latDeg = aemetToDec(estacionSeleccionadaMeta.latitud);
