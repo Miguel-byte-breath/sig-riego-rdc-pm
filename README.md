@@ -180,7 +180,7 @@ Esto permite **auditoría técnica** y validación externa (SIAR, estudios de ri
 
 Para ejecutar el sistema es necesaria una **API Key válida de AEMET**:
 
-```js
+
 const API_KEY = "TU_AEMET_API_KEY";
 
 ---
