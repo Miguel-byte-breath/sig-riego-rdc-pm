@@ -363,7 +363,7 @@ function renderDiagnosticoSeccion1({ principal, supports, candidatesDiag, bestBy
   const res = document.getElementById("resBusqueda");
   if (!res) return;
 
-  const fmt = (x) => (x == null ? "—" : String(x).replace(".", ","));
+  const fmt = (x, dec = 1) => (x == null ? "—" : String(x).replace(".", ","));
   const pid = stationIdOf(principal);
   const pname = stationNameOf(principal);
 
