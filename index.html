@@ -758,8 +758,9 @@ async function encontrarMasCercana() {
     res.innerHTML = "⏳ Localizando y validando estación con datos...";
 
     try {
-        const responseEsts = await fetch('estaciones.json');
-        const ests = await responseEsts.json();
+        const responseEsts = await fetch(`${location.origin}/estaciones.json`, { cache: "no-store" });
+if (!responseEsts.ok) throw new Error(`estaciones.json HTTP ${responseEsts.status}`);
+const ests = await responseEsts.json();
 
         estacionesCercanas = ests.map(e => {
     const latE = aemetToDec(e.latitud);
@@ -916,7 +917,8 @@ for (let i = 0; i < limiteBusqueda; i++) {
             res.innerHTML = "❌ No se encontraron estaciones con datos en el entorno cercano.";
         }
     } catch (e) {
-        res.innerHTML = "❌ Error al conectar con el servicio de estaciones.";
+        res.innerHTML = `❌ Error al conectar con el servicio de estaciones: ${e.message}`;
+
     }
 }
 
