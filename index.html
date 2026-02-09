@@ -217,7 +217,7 @@ const log = usageLogMensual?.[monthKey] || usageLogMensual?.[monthKeyHist] || {}
 
         const hrOk   = (log.rhmean != null && log.rhmean !== "");
         const windOk = (log.wind != null && log.wind !== "");
-        const radOk  = (log.rad != null && log.rad !== "");
+        const radOk  = (log.rad_value != null && log.rad_value !== "" && Number.isFinite(log.rad_value));
 
         const missing = [];
         if (!tempOk) missing.push("Temperatura (tmean o tmin+tmax)");
@@ -295,7 +295,8 @@ function initUsageLog(monthKeys) {
             tmax: null,
             rhmean: null,
             wind: null,
-            rad: null
+            rad: null,
+            rad_value: null
         };
     }
     return log;
@@ -1143,7 +1144,7 @@ function resolveTempsConFallback(monthKey, principalId, supportIds) {
 
             if (nDiasActivos > 0) {
                    if (!monthKeysCiclo.includes(monthKey)) monthKeysCiclo.push(monthKey);
-                   if (!usageLogMensual[monthKey]) usageLogMensual[monthKey] = { tmean:null, tmin:null, tmax:null, rhmean:null, wind:null, rad:null };
+                   if (!usageLogMensual[monthKey]) usageLogMensual[monthKey] = { tmean:null, tmin:null, tmax:null, rhmean:null, wind:null, rad:null, rad_value:null };
 
     const pMensualAvg = medias[mIdx+1].count > 0 ? (medias[mIdx+1].sumP / medias[mIdx+1].count) : 0;
 
@@ -1237,8 +1238,8 @@ if (radSource) {
     setUsed(usageLogMensual, monthKey, "rad", radSource.stationId, radSource.mode, radSource.note);
 }        
 usageLogMensual[monthKey] = usageLogMensual[monthKey] || {};
-usageLogMensual[monthKey].rad = (Rs != null && !Number.isNaN(Rs)) ? Rs : null;
-usageLogMensual[monthKey].rad_station = radSource ? radSource.stationId : null;
+usageLogMensual[monthKey].rad_value = (Rs != null && !Number.isNaN(Rs)) ? Rs : null;
+usageLogMensual[monthKey].rad_station = radSource ? radSource.stationId : null; // opcional, solo debug
 
 
     if (Rs > 0 && temps && RHmean != null && u2 != null) {
