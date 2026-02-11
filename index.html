@@ -1151,6 +1151,7 @@ function resolveTempsConFallback(monthKey, principalId, supportIds) {
             const nDiasActivos = Math.max(0, (rFin - rIni) / (86400000) + 1);
 
             if (nDiasActivos > 0) {
+                let temps = null; // HOTFIX: disponible para mesesCiclo.push (tmMensualAvg)
                    if (!monthKeysCiclo.includes(monthKey)) monthKeysCiclo.push(monthKey);
                    if (!usageLogMensual[monthKey]) usageLogMensual[monthKey] = { tmean:null, tmin:null, tmax:null, rhmean:null, wind:null, rad:null, rad_value:null };
 
@@ -1171,7 +1172,7 @@ const latDeg = Number.isFinite(estacionSeleccionadaMeta?.lat)
   : aemetToDec(estacionSeleccionadaMeta?.latitud);
 
 // ---- PASO 4: resolve por fallback (principal + supports) ----
-const temps = resolveTempsConFallback(monthKey, estacionSeleccionadaId, supportIds);
+temps = resolveTempsConFallback(monthKey, estacionSeleccionadaId, supportIds);
 
 const RHmean = resolveMensualConFallback(
     monthKey,
