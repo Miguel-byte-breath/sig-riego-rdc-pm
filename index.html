@@ -102,30 +102,26 @@
         <div id="panelResultados" style="display:none">
             <div class="chart-container"><canvas id="graficaDoble"></canvas></div>
             <button class="btn btn-blue" style="width:100%" onclick="descargarExcel()">📥 Exportar Tabla Detallada (.xlsx)</button>
-            <div id="panelRDC" style="display:none; margin: 30px 0 20px 0;">
-             <div class="input-group">
-    <div>
-      <label class="input-label">RDC (%)</label>
-      <input type="number" id="rdcPct" class="main-input" placeholder="Ej. 0, 10, -5" step="0.1">
-    </div>
-
-    <div>
-      <label class="input-label">RDC (m³/ha)</label>
-      <input type="number" id="rdcM3" class="main-input" placeholder="(solo lectura)" disabled>
-    </div>
-
-    <div>
-      <button class="btn btn-blue" style="width:100%" onclick="/* FASE 3 */">Aplicar RDC</button>
-    </div>
+           <div id="panelRDC" style="display:none; margin: 30px 0 20px 0;">
+  <div style="font-weight:800; color:#0f172a; margin-bottom:10px;">
+    💧 2B. Ajuste RDC por mes
   </div>
-<div style="display:flex; align-items:center; gap:10px; margin: 8px 0 12px 0;">
-  <input type="checkbox" id="chkRedistribTermica" />
-  <label for="chkRedistribTermica" style="font-weight:700; color:#334155;">
-    Redistribución térmica diaria (±10%)
-  </label>
-</div>
-  <div id="rdcNota" style="color:#64748b; font-size:0.95rem;">
-    Ajuste porcentual sobre NHn. (La lógica entra en FASE 3).
+
+  <div id="rdcContainer"></div>
+
+  <div style="display:flex; align-items:center; gap:10px; margin: 10px 0 12px 0;">
+    <input type="checkbox" id="chkRedistribTermica" />
+    <label for="chkRedistribTermica" style="font-weight:700; color:#334155;">
+      Redistribución térmica diaria (±10%)
+    </label>
+  </div>
+
+  <button class="btn btn-blue" style="width:100%" onclick="aplicarRDCMensual()">
+    Aplicar RDC (solo reasignación)
+  </button>
+
+  <div id="rdcNota" style="color:#64748b; font-size:0.95rem; margin-top:8px;">
+    RDC mensual = ajuste porcentual sobre NHn mensual. No recalcula AEMET/ETo.
   </div>
 </div>
             <table>
@@ -1397,6 +1393,7 @@ console.log("DEBUG usageLog init", monthKeysCiclo.length, Object.keys(usageLogMe
         document.getElementById('totalAjustado').innerText = fmtNum(sumaAsignada);
         
         document.getElementById('panelResultados').style.display = "block";
+        renderizarControlesRDC(mesesCiclo);
         const elRDC = document.getElementById('panelRDC');
 if (elRDC) elRDC.style.display = "block";
 
@@ -1517,6 +1514,69 @@ function calcularSemanasCorrelativas(mesesCiclo, fIni, fFin) {
     }
 }
     });
+}
+function renderizarControlesRDC(mesesCiclo) {
+  const cont = document.getElementById('rdcContainer');
+  if (!cont) return;
+  cont.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.style.display = "grid";
+  wrap.style.gridTemplateColumns = "140px 160px 160px";
+  wrap.style.gap = "10px";
+  wrap.style.alignItems = "end";
+  wrap.style.marginBottom = "10px";
+
+  wrap.innerHTML = `
+    <div style="font-weight:800; color:#334155;">Mes</div>
+    <div style="font-weight:800; color:#334155;">RDC (%)</div>
+    <div style="font-weight:800; color:#334155;">RDC (m³/ha)</div>
+  `;
+
+  mesesCiclo.forEach((m, idx) => {
+    const lab = document.createElement("div");
+    lab.textContent = m.etiqueta || m.monthKey || `Mes ${idx + 1}`;
+    lab.style.color = "#0f172a";
+    lab.style.fontWeight = "700";
+
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.step = "0.1";
+    inp.className = "main-input";
+    inp.placeholder = "0";
+    inp.value = (m.rdc_pct ?? "");
+    inp.dataset.idx = String(idx);
+
+    const out = document.createElement("input");
+    out.type = "number";
+    out.className = "main-input";
+    out.disabled = true;
+    out.value = (m.rdc_m3 ?? "");
+    out.dataset.idx = String(idx);
+
+    inp.addEventListener("input", () => {
+      const i = parseInt(inp.dataset.idx, 10);
+      const pct = parseFloat(inp.value);
+      const base = Number(mesesCiclo[i].nhn_m3 || 0);
+
+      mesesCiclo[i].rdc_pct = Number.isFinite(pct) ? pct : null;
+
+      const delta = Number.isFinite(pct) ? (base * (pct / 100)) : null;
+      mesesCiclo[i].rdc_m3 = (delta == null ? null : Math.round(delta));
+
+      out.value = (mesesCiclo[i].rdc_m3 ?? "");
+    });
+
+    wrap.appendChild(lab);
+    wrap.appendChild(inp);
+    wrap.appendChild(out);
+  });
+
+  cont.appendChild(wrap);
+}
+
+function aplicarRDCMensual() {
+  alert("OK: controles RDC listos. Siguiente paso: aplicar RDC a 'Asignado' y totales.");
 }
 
 function descargarExcel() {
