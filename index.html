@@ -969,7 +969,8 @@ for (let i = 0; i < limiteBusqueda; i++) {
 }
 
 // SECCIÓN 2: Cálculo con API AEMET (Bucle de Resiliencia)
-async function generarPlanOro() {
+async function generarPlanOro(opts = {}) {
+  const { skipAemet = false } = opts;
     if(!estacionSeleccionadaId) return alert("⚠️ La estación aún no ha sido validada en el Paso 1.");
     
     const volV = parseFloat(document.getElementById('volDisponible').value) || 0;
@@ -1578,6 +1579,8 @@ function renderizarControlesRDC(mesesCiclo) {
 }
 
 function aplicarRDCMensual() {
+  generarPlanOro();
+}
   // re-render del balance usando los rdc_m3 ya almacenados en mesesCiclo
   generarPlanOro({ skipAemet: true });
 }
