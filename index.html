@@ -102,6 +102,26 @@
         <div id="panelResultados" style="display:none">
             <div class="chart-container"><canvas id="graficaDoble"></canvas></div>
             <button class="btn btn-blue" style="width:100%" onclick="descargarExcel()">📥 Exportar Tabla Detallada (.xlsx)</button>
+             <div class="input-group">
+    <div>
+      <label class="input-label">RDC (%)</label>
+      <input type="number" id="rdcPct" class="main-input" placeholder="Ej. 0, 10, -5" step="0.1">
+    </div>
+
+    <div>
+      <label class="input-label">RDC (m³/ha)</label>
+      <input type="number" id="rdcM3" class="main-input" placeholder="(solo lectura)" disabled>
+    </div>
+
+    <div>
+      <button class="btn btn-blue" style="width:100%" onclick="/* FASE 3 */">Aplicar RDC</button>
+    </div>
+  </div>
+
+  <div id="rdcNota" style="color:#64748b; font-size:0.95rem;">
+    Ajuste porcentual sobre NHn. (La lógica entra en FASE 3).
+  </div>
+</div>
             <table>
                 <thead>
                     <tr>
@@ -130,31 +150,7 @@
         </div>
     </div>
     
-<div class="card" id="panelRDC" style="display:none">
-  <div class="header-step">💧 2B. Ajuste RDC (Recursos) </div>
-
-  <div class="input-group">
-    <div>
-      <label class="input-label">RDC (%)</label>
-      <input type="number" id="rdcPct" class="main-input" placeholder="Ej. 0, 10, -5" step="0.1">
-    </div>
-
-    <div>
-      <label class="input-label">RDC (m³/ha)</label>
-      <input type="number" id="rdcM3" class="main-input" placeholder="(solo lectura)" disabled>
-    </div>
-
-    <div>
-      <button class="btn btn-blue" style="width:100%" onclick="/* FASE 3 */">Aplicar RDC</button>
-    </div>
-  </div>
-
-  <div id="rdcNota" style="color:#64748b; font-size:0.95rem;">
-    Ajuste porcentual sobre NHn. (La lógica entra en FASE 3).
-  </div>
-</div>
-
-    <div class="card" id="seccionSemanal" style="display:none">
+     <div class="card" id="seccionSemanal" style="display:none">
         <div class="header-step">📅 3. Programación Semanal (Riego Neto)</div>
         <p style="color:#64748b; font-size:1rem; margin-bottom: 25px; line-height: 1.5;">
             Distribución operativa del riego neto por semanas naturales.
