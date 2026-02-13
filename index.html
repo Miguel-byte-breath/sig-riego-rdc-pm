@@ -1544,12 +1544,15 @@ function calcularSemanasCorrelativas(mesesCiclo, fIni, fFin) {
     layout: { padding: { top: 30 } }, // Evita que los números altos se corten
     plugins: {
         datalabels: {
-            display: true,
-            align: 'top',
-            offset: 8, // Este es el "ascensor" que sube el número sobre la línea
-            font: { weight: 'bold', size: 10 },
-            formatter: (val) => val > 0 ? fmtNum(val) : ''
-        }
+  display: true,
+  anchor: 'end',
+  align: 'end',   // 👈 en vez de 'top'
+  offset: 6,
+  clamp: true,    // 👈 evita que se meta en la leyenda
+  clip: true,     // 👈 recorta si intenta salirse
+  font: { weight: 'bold', size: 10 },
+  formatter: (val) => (val > 0 ? fmtNum(val) : '')
+}
     },
     scales: {
         y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
