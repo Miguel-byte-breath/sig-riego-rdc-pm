@@ -1629,6 +1629,9 @@ const pesos = dias.map(d => {
         cuerpo.innerHTML += `<tr><td style="font-weight:bold; color:#1e3a8a">Semana ${s.num}</td><td>${fechas}</td><td class="col-ajustada">${fmtNum(val)} m³/ha</td></tr>`;
         exportDataSemanal.push({ "Semana": s.num, "Fechas": fechas, "Riego Neto (m3/ha)": val });
     });
+const maxS = Math.max(...dataS, 0);
+const maxConMargen = maxS * 1.12;                 // 12% aire
+const yMaxSugerido = Math.ceil(maxConMargen / 50) * 50; // 200, 250, 300...
 
     document.getElementById('totalSemanalSuma').innerText = fmtNum(totalS) + " m³/ha";
     document.getElementById('seccionSemanal').style.display = "block";
@@ -1669,7 +1672,7 @@ const pesos = dias.map(d => {
 }
     },
     scales: {
-        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, suggestedMax: yMaxSugerido },
         x: { grid: { display: false } }
     }
 }
