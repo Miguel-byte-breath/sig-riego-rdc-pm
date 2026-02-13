@@ -1481,16 +1481,125 @@ m.m3RdcAgro = m3RdcAgro; // para Sección 3
 }
 function calcularSemanasCorrelativas(mesesCiclo, fIni, fFin) {
     let mapaDiario = {};
+    const usarRedistribTermica = !!document.getElementById("chkRedistribTermica")?.checked;
     mesesCiclo.forEach(m => {
-        const m3Diario = m.m3AsignadoFinal / m.diasActivos;
+        const m3MesBase = Number((m.m3RdcAgro != null ? m.m3RdcAgro : m.m3AsignadoFinal) || 0);
+        const m3Diario = (m.diasActivos > 0) ? (m3MesBase / m.diasActivos) : 0;
         let dIter = new Date(m.anio, m.mesNum - 1, 1);
         let dFinMes = new Date(m.anio, m.mesNum, 0);
         if(dIter < fIni) dIter = new Date(fIni); 
         let limite = (dFinMes > fFin) ? fFin : dFinMes; 
-        while(dIter <= limite) {
-            mapaDiario[dIter.toISOString().split('T')[0]] = m3Diario;
-            dIter.setDate(dIter.getDate() + 1);
-        }
+        // Reparto por día (uniforme) o por peso térmico (si checkbox activo)
+if (!usarRedistribTermica) {
+  // Igual que antes
+  while (dIter <= limite) {
+    mapaDiario[dIter.toISOString().split('T')[0]] = m3Diario;
+    dIter.setDate(dIter.getDate() + 1);
+  }
+} else {
+  // 1) Construimos lista de días activos del mes
+  const dias = [];
+  let tmp = new Date(dIter);
+  while (tmp <= limite) {
+    dias.push(new Date(tmp));
+    tmp.setDate(tmp.getDate() + 1);
+  }
+  if (dias.length === 0) return;
+
+  // 2) Peso térmico simple: usamos ETo diaria del mes como base (constante por día dentro del mes)
+  // (más adelante, si quieres, interpolamos con meses vecinos; por ahora ya activa redistribución por semanas)
+  // Peso térmico diario con interpolación lineal dentro del mes (usa etoDiaria de mes actual y siguiente)
+const etoMes = Number(m.etoDiaria || 0);
+
+// buscamos eto del mes siguiente (si existe en mesesCiclo); si no, usamos el mismo
+const mSig = mesesCiclo.find(x => x.anio === (m.mesNum === 12 ? m.anio + 1 : m.anio) && x.mesNum === (m.mesNum === 12 ? 1 : m.mesNum + 1));
+const etoMesSig = Number((mSig && mSig.etoDiaria != null) ? mSig.etoDiaria : etoMes);
+
+const diasEnMes = (new Date(m.anio, m.mesNum, 0)).getDate();
+
+const pesos = dias.map(d => {
+  const diaMes = d.getDate(); // 1..diasEnMes
+  const t = (diasEnMes > 1) ? ((diaMes - 1) / (diasEnMes - 1)) : 0; // 0..1
+  const etoInterp = etoMes + (etoMesSig - etoMes) * t; // interpolación lineal
+  return Math.max(0.0001, Number.isFinite(etoInterp) ? etoInterp : 0.0001);
+});
+
+  const sumW = pesos.reduce((a,b) => a+b, 0);
+
+  // 3) Generamos m3 por día proporcional al peso (mantiene total mensual)
+  const m3PorDia = pesos.map(p => (m3MesBase * (p / sumW)));
+
+  // 4) Agregamos por semana y aplicamos clamp ±10% vs reparto uniforme por días
+  //    (manteniendo total mensual)
+  const semanasMes = {}; // key -> {dias, val}
+  for (let k=0; k<dias.length; k++) {
+    const d = dias[k];
+    const key = `S${getWeekNumber(d)}-${d.getFullYear()}`;
+    if (!semanasMes[key]) semanasMes[key] = { dias: 0, val: 0 };
+    semanasMes[key].dias += 1;
+    semanasMes[key].val += m3PorDia[k];
+  }
+
+  const keys = Object.keys(semanasMes);
+  const totalDias = dias.length;
+
+  // clamp y reequilibrio manteniendo total mensual
+  let sumaClamped = 0;
+  const minMax = {};
+  keys.forEach(key => {
+    const diasSem = semanasMes[key].dias;
+    const uniforme = m3MesBase * (diasSem / totalDias);
+    const minV = 0.9 * uniforme;
+    const maxV = 1.1 * uniforme;
+    let val = semanasMes[key].val;
+    val = Math.max(minV, Math.min(maxV, val));
+    semanasMes[key].val = val;
+    minMax[key] = { minV, maxV };
+    sumaClamped += val;
+  });
+
+  // Repartimos el residuo respetando min/max
+  let residuo = m3MesBase - sumaClamped;
+
+  const ajustar = (signo) => {
+    // signo +1: necesitamos sumar; -1: necesitamos restar
+    for (const key of keys) {
+      if (Math.abs(residuo) < 1e-6) break;
+      const mm = minMax[key];
+      const val = semanasMes[key].val;
+      const margen = (signo > 0) ? (mm.maxV - val) : (val - mm.minV);
+      if (margen <= 1e-9) continue;
+      const delta = Math.min(Math.abs(residuo), margen) * signo;
+      semanasMes[key].val = val + delta;
+      residuo -= delta;
+    }
+  };
+
+  // Intentamos distribuir; si aún queda, se queda en el último week (muy raro)
+  if (residuo > 0) ajustar(+1);
+  if (residuo < 0) ajustar(-1);
+  if (Math.abs(residuo) > 1e-4) {
+    // fallback: ajusta en la última semana
+    const lastKey = keys[keys.length - 1];
+    semanasMes[lastKey].val += residuo;
+    residuo = 0;
+  }
+
+  // 5) Volvemos a día: distribuimos cada semana uniformemente en sus días (simple)
+  //    (solo para llenar mapaDiario, el cálculo final semanal ya sale por suma)
+  //    Esto mantiene exactamente los totales semanales clamped.
+  const porKey = {};
+  keys.forEach(key => {
+    porKey[key] = semanasMes[key].val / semanasMes[key].dias;
+  });
+
+  for (let k=0; k<dias.length; k++) {
+    const d = dias[k];
+    const key = `S${getWeekNumber(d)}-${d.getFullYear()}`;
+    mapaDiario[d.toISOString().split('T')[0]] = porKey[key];
+  }
+}
+
     });
 
     let semanasData = {};
