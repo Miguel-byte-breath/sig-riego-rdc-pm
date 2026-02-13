@@ -125,7 +125,7 @@
                         <td id="totalPe" class="col-rain"></td>
                         <td id="totalIdeal" class="col-ideal"></td>
                         <td id="totalAjustado" class="col-ajustada"></td>
-                        <td class="col-ideal"></td>
+                        <td id="totalRDC" class="col-ideal"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -1384,7 +1384,7 @@ function renderBalanceMensual(mesesCiclo, sumaNHn, volV, fIni, fFin) {
   exportDataMensual = [];
 
   let labels = [], dataPe = [], dataIdeal = [], dataAjustada = [];
-  let sumaAsignada = 0, sumaP = 0, sumaPe = 0;
+  let sumaAsignada = 0, sumaP = 0, sumaPe = 0, sumaRDC = 0;
 
   mesesCiclo.forEach(m => {
     const m3Base = sumaNHn > 0 ? (m.nhn_m3 / sumaNHn) * volV : 0;
@@ -1398,6 +1398,7 @@ m.m3RdcAgro = m3RdcAgro; // guardamos para usarlo luego en la Sección 3
     sumaAsignada += m3Asignado;
     sumaP += m.pMm;
     sumaPe += m.peMm;
+    sumaRDC += Number(m3RdcAgro || 0);
 
     m.m3AsignadoFinal = m3Asignado;
 
@@ -1432,6 +1433,8 @@ m.m3RdcAgro = m3RdcAgro; // guardamos para usarlo luego en la Sección 3
   document.getElementById('totalPe').innerText = fmtNum(sumaPe, 1);
   document.getElementById('totalIdeal').innerText = fmtNum(sumaNHn);
   document.getElementById('totalAjustado').innerText = fmtNum(sumaAsignada);
+  const elTotalRDC = document.getElementById('totalRDC');
+  if (elTotalRDC) elTotalRDC.innerText = fmtNum(sumaRDC);
 
   document.getElementById('panelResultados').style.display = "block";
 
