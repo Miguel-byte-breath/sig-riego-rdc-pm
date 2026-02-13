@@ -114,6 +114,7 @@
                         <th class="col-rain">P<sub>e</sub><br><small>(mm)</small></th>
                         <th class="col-ideal">NH<sub>n</sub><br><small>(m³/ha)</small></th>
                         <th class="col-ajustada">Asignado<br><small>(m³/ha)</small></th>
+                        <th class="col-ideal">RDC<br><small>(m³/ha)</small></th>
                     </tr>
                 </thead>
                 <tbody id="cuerpoTabla"></tbody>
@@ -1386,6 +1387,9 @@ function renderBalanceMensual(mesesCiclo, sumaNHn, volV, fIni, fFin) {
 
   mesesCiclo.forEach(m => {
     const m3Base = sumaNHn > 0 ? (m.nhn_m3 / sumaNHn) * volV : 0;
+    const pct = Math.max(0, Math.min(100, Number(m.rdc_pct || 0)));
+    const m3RdcAgro = Number(m.nhn_m3 || 0) * (1 + pct / 100);
+m.m3RdcAgro = m3RdcAgro; // guardamos para usarlo luego en la Sección 3
     const m3RDC = m.rdc_m3 || 0;
     const m3Asignado = m3Base + m3RDC;
 
@@ -1410,6 +1414,7 @@ function renderBalanceMensual(mesesCiclo, sumaNHn, volV, fIni, fFin) {
       <td class="col-rain" style="font-weight:bold">${fmtNum(m.peMm, 1)}</td>
       <td class="col-ideal">${fmtNum(m.nhn_m3)}</td>
       <td class="col-ajustada">${fmtNum(m3Asignado)}</td>
+      <td class="col-ideal">${fmtNum(m3RdcAgro)}</td>
     </tr>`;
 
     exportDataMensual.push({
@@ -1572,6 +1577,8 @@ function renderizarControlesRDC(mesesCiclo) {
     const inp = document.createElement("input");
     inp.type = "number";
     inp.step = "0.1";
+    inp.min = "0";
+    inp.max = "100";
     inp.className = "main-input";
     inp.placeholder = "0";
     inp.value = (m.rdc_pct ?? "");
@@ -1586,7 +1593,9 @@ function renderizarControlesRDC(mesesCiclo) {
 
     inp.addEventListener("input", () => {
       const i = parseInt(inp.dataset.idx, 10);
-      const pct = parseFloat(inp.value);
+      let pct = parseFloat(inp.value);
+if (Number.isFinite(pct)) pct = Math.max(0, Math.min(100, pct));
+ = parseFloat(inp.value);
       const base = Number(mesesCiclo[i].nhn_m3 || 0);
 
       mesesCiclo[i].rdc_pct = Number.isFinite(pct) ? pct : null;
