@@ -7,7 +7,6 @@
 * Balance hídrico agronómico mensual
 * Redistribución operativa semanal con control hidráulico
 * Sistema resiliente de estaciones con fallback inteligente
-
 ---
 
 # 🎯 Objetivo del sistema
