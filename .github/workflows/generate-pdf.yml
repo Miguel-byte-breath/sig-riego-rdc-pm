@@ -2,7 +2,9 @@ name: Generar PDF desde README
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
+    paths:
+      - "README.md"
   workflow_dispatch:
 
 permissions:
@@ -11,22 +13,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Debug trigger
-        run: |
-          echo "Branch: $GITHUB_REF"
-          echo "Actor: $GITHUB_ACTOR"
-          echo "SHA: $GITHUB_SHA"
 
-      - name: Checkout
+    steps:
+      - name: Checkout del repositorio
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Ver si existe README
-        run: |
-          ls -lah
-          find . -maxdepth 3 -iname "readme.md" -print
 
       - name: Crear carpeta generados
         run: mkdir -p docs/generados
@@ -41,7 +33,9 @@ jobs:
 
       - name: Debug: buscar pdfs
         run: |
+          echo "Contenido de docs/generados:"
           ls -lah docs/generados || true
+          echo "Buscar PDFs en el workspace:"
           find . -maxdepth 6 -type f -name "*.pdf" -print
 
       - name: Commit y push
@@ -52,4 +46,3 @@ jobs:
           git diff --cached --quiet && echo "No hay cambios" && exit 0
           git commit -m "docs: actualizar PDF del README"
           git push
-
