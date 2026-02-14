@@ -115,11 +115,7 @@ Esto evita perder meses completos por fallo parcial de una variable.
 ## 📐 Método: FAO-56 Penman–Monteith
 
 Se aplica la formulación estándar FAO-56:
-
-ETo = [0.408 Δ (Rn − G) + γ (900 / (T + 273)) u2 (es − ea)]
-      -----------------------------------------------------
-           Δ + γ (1 + 0.34 u2)
-
+<img width="363" height="46" alt="image" src="https://github.com/user-attachments/assets/abada8dd-8ee3-4804-8cbe-c428a8709212" />
 
 Donde:
 
