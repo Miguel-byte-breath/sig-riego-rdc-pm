@@ -1423,13 +1423,18 @@ m.m3RdcAgro = m3RdcAgro; // para Sección 3
       <td class="col-ideal">${fmtNum(m3RdcAgro)}</td>
     </tr>`;
 
-    exportDataMensual.push({
-      "Mes": m.etiqueta,
-      "ETc (mm)": fmtNum(m.etcMm, 2),
-      "P. Efectiva (mm)": fmtNum(m.peMm, 2),
-      "Nec. Neta (m3/ha)": Math.round(m.nhn_m3),
-      "Asignado (m3/ha)": Math.round(m3Asignado)
-    });
+   exportDataMensual.push({
+  "Mes": m.etiqueta,
+  "Días": m.diasActivos,
+  "ETo (mm/d)": fmtNum(m.etoDiaria, 2),
+  "Kc": fmtNum(m.kc, 2),
+  "ETc (mm)": fmtNum(m.etcMm, 1),
+  "P (mm)": fmtNum(m.pMm, 1),
+  "Pe (mm)": fmtNum(m.peMm, 1),
+  "NHn (m3/ha)": Math.round(m.nhn_m3),
+  "Asignado (m3/ha)": Math.round(m3Asignado),
+  "Ajuste RDC (m3/ha)": Math.round(m3RdcAgro)
+});
   });
 
   document.getElementById('totalP').innerText = fmtNum(sumaP, 1);
