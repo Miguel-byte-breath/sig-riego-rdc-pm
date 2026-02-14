@@ -116,11 +116,10 @@ Esto evita perder meses completos por fallo parcial de una variable.
 
 Se aplica la formulación estándar FAO-56:
 
-ETo =
-[0.408 Δ (Rn − G) + γ (900 / (T + 273)) u2 (es − ea)]
------------------------------------------------------
+ETo = [0.408 Δ (Rn − G) + γ (900 / (T + 273)) u2 (es − ea)]
+      -----------------------------------------------------
+           Δ + γ (1 + 0.34 u2)
 
-Δ + γ (1 + 0.34 u2)
 
 Donde:
 
