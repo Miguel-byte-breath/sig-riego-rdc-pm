@@ -23,7 +23,7 @@ jobs:
         with:
           # 👇 SOLO CAMBIO 2: La ruta de entrada ahora es la raíz
           input_path: README.md        # <-- Ahora apunta a la raíz
-          output_dir: docs/             # <-- Sigue guardando en docs/
+          output_dir: docs/generados             # <-- Sigue guardando en docs/
           build_html: false
 
       # Paso 3: Subir el PDF generado al repositorio
