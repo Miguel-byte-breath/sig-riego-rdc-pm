@@ -12,7 +12,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
@@ -26,19 +25,32 @@ jobs:
         uses: baileyjm02/markdown-to-pdf@v1
         with:
           input_path: README.md
-          output_dir: docs/generados
+          output_dir: docs/generados/   # <- barra final
           build_html: false
+          build_pdf: true              # <- explícito
 
-      - name: Ver qué se generó
+      - name: Debug: localizar PDFs
         run: |
-          ls -lah docs/generados
-          git status --porcelain
+          echo "Contenido docs/generados:"
+          ls -lah docs/generados || true
+          echo "Buscar PDFs en el workspace:"
+          find . -maxdepth 5 -type f -name "*.pdf" -print
+
+      - name: Asegurar README.pdf en docs/generados
+        run: |
+          # si no existe README.pdf en docs/generados, intenta mover el primer pdf encontrado
+          if [ ! -f docs/generados/README.pdf ]; then
+            PDF_FOUND="$(find . -maxdepth 5 -type f -name '*.pdf' | head -n 1)"
+            if [ -n "$PDF_FOUND" ]; then
+              mv "$PDF_FOUND" docs/generados/README.pdf
+            fi
+          fi
 
       - name: Commit y push del PDF
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add docs/generados/*.pdf
+          git add docs/generados/README.pdf
           git diff --cached --quiet && echo "No hay cambios" && exit 0
-          git commit -m "docs: actualizar PDF del README"
+          git commit -m "docs: actualizar README.pdf automáticamente"
           git push
