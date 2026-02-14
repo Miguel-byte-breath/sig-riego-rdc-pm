@@ -1,13 +1,3 @@
-Perfecto.
-A continuación tienes el **README completo reescrito en Markdown 100 % compatible con GitHub**, sin LaTeX, usando solo:
-
-* Subíndices HTML (`<sub>`)
-* Fórmulas en texto técnico plano
-* Tablas estándar
-* Sin notación que rompa el renderizado
-
-Puedes **copiar y pegar directamente** en tu README.md sin problemas.
-
 ---
 
 # 🌾 S.I.G. Riego Pro v1.1 (API Connect – RDC Edition)
