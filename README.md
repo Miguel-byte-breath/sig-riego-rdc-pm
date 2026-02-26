@@ -1,4 +1,4 @@
-# 🌾 S.I.G. Riego Pro v1.1 (API Connect – RDC Edition)
+# 🌾 S.I.G. Riego Pro v1.0 (API Connect – RDC Edition)
 
 **Sistema de Información Geográfica para la Gestión Integral de Recursos Hídricos**, orientado al diseño, planificación y evaluación estacional del riego agrícola mediante:
 
